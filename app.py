@@ -22,9 +22,9 @@ def init_db():
             cursor = conn.cursor()
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS users (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    username VARCHAR(50) UNIQUE NOT NULL,
-                    password VARCHAR(255) NOT NULL
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    password TEXT NOT NULL
                 )
             """)
             conn.commit()
@@ -33,11 +33,11 @@ def init_db():
             cursor.execute("SELECT * FROM users WHERE username = 'admin'")
             if not cursor.fetchone():
                 hashed_password = generate_password_hash('admin123')
-                cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", 
+                cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", 
                              ('admin', hashed_password))
                 conn.commit()
                 print("Default admin user created: username=admin, password=admin123")
-        except Error as e:
+        except sqlite3.Error as e:
             print(f"Database initialization error: {e}")
         finally:
             conn.close()
@@ -70,9 +70,9 @@ def auth_login():
             cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
             user = cursor.fetchone()
             
-            if user and check_password_hash(user[2], password):
-                session['user_id'] = user[0]
-                session['username'] = user[1]
+            if user and check_password_hash(user['password'], password):
+                session['user_id'] = user['id']
+                session['username'] = user['username']
                 flash('Login successful!', 'success')
                 return redirect(url_for('dashboard'))
             else:
