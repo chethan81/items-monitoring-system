@@ -66,18 +66,18 @@ def auth_login():
     conn = get_db_connection()
     if conn:
         try:
-            cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
             user = cursor.fetchone()
             
-            if user and check_password_hash(user['password'], password):
-                session['user_id'] = user['id']
-                session['username'] = user['username']
+            if user and check_password_hash(user[2], password):
+                session['user_id'] = user[0]
+                session['username'] = user[1]
                 flash('Login successful!', 'success')
                 return redirect(url_for('dashboard'))
             else:
                 flash('Invalid username or password', 'error')
-        except Error as e:
+        except sqlite3.Error as e:
             flash('Database error occurred', 'error')
             print(f"Login error: {e}")
         finally:
