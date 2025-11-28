@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
-import mysql.connector
-from mysql.connector import Error
+import sqlite3
 import os
 
 app = Flask(__name__)
@@ -9,14 +8,10 @@ app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-product
 
 def get_db_connection():
     try:
-        connection = mysql.connector.connect(
-            host=os.environ.get('MYSQL_HOST', 'localhost'),
-            user=os.environ.get('MYSQL_USER', 'root'),
-            password=os.environ.get('MYSQL_PASSWORD', ''),
-            database=os.environ.get('MYSQL_DATABASE', 'items_monitoring')
-        )
+        connection = sqlite3.connect('items_monitoring.db')
+        connection.row_factory = sqlite3.Row
         return connection
-    except Error as e:
+    except sqlite3.Error as e:
         print(f"Database connection error: {e}")
         return None
 

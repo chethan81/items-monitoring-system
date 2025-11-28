@@ -9,7 +9,7 @@ services:
     healthCheckPath: /
     autoDeploy: true
     
-    # Environment variables (set these in Render dashboard)
+    # Environment variables
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.5
@@ -17,18 +17,3 @@ services:
         value: 10000
       - key: SECRET_KEY
         generateValue: true
-      - key: MYSQL_HOST
-        sync: false
-      - key: MYSQL_USER
-        sync: false  
-      - key: MYSQL_PASSWORD
-        sync: false
-      - key: MYSQL_DATABASE
-        value: items_monitoring
-
-# MySQL Service (Render provides managed MySQL)
-databases:
-  - name: items-monitoring-db
-    plan: free
-    databaseName: items_monitoring
-    user: items_monitoring_user
