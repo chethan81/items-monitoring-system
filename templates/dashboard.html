@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Items Monitoring System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="dashboard-header">
+            <h1>Items Monitoring System</h1>
+            <div class="user-info">
+                <span>Welcome, <strong>{{ username }}</strong></span>
+                <a href="{{ url_for('logout') }}" class="btn btn-logout">Logout</a>
+            </div>
+        </header>
+        
+        <main class="dashboard-content">
+            <div class="welcome-card">
+                <h2>Welcome to Items Monitoring System</h2>
+                <p>You have successfully logged in as <strong>{{ username }}</strong>.</p>
+                
+                <div class="system-info">
+                    <h3>System Features</h3>
+                    <ul>
+                        <li>✓ User Authentication</li>
+                        <li>✓ Session Management</li>
+                        <li>✓ MySQL Database Integration</li>
+                        <li>✓ Secure Password Hashing</li>
+                        <li>✓ Ready for Cloud Deployment</li>
+                    </ul>
+                </div>
+                
+                <div class="next-steps">
+                    <h3>Next Steps</h3>
+                    <p>This is a basic authentication system. You can extend it with:</p>
+                    <ul>
+                        <li>Items monitoring features</li>
+                        <li>Real-time notifications</li>
+                        <li>Data visualization</li>
+                        <li>User management</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

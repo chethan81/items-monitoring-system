@@ -1,0 +1,34 @@
+services:
+  # Web Service
+  - type: web
+    name: items-monitoring-system
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    healthCheckPath: /
+    autoDeploy: true
+    
+    # Environment variables (set these in Render dashboard)
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.5
+      - key: PORT
+        value: 10000
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MYSQL_HOST
+        sync: false
+      - key: MYSQL_USER
+        sync: false  
+      - key: MYSQL_PASSWORD
+        sync: false
+      - key: MYSQL_DATABASE
+        value: items_monitoring
+
+# MySQL Service (Render provides managed MySQL)
+databases:
+  - name: items-monitoring-db
+    plan: free
+    databaseName: items_monitoring
+    user: items_monitoring_user
