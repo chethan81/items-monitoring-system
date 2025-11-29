@@ -38,7 +38,35 @@ def ensure_database_exists():
             cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", 
                          ('admin', hashed_password))
             connection.commit()
-            print("Database and admin user created successfully")
+            print("Users table and admin user created successfully")
+        
+        # Check if stock_items table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='stock_items'")
+        if not cursor.fetchone():
+            # Create stock_items table
+            cursor.execute("""
+                CREATE TABLE stock_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    quantity INTEGER NOT NULL,
+                    price REAL NOT NULL,
+                    description TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # Insert sample data
+            sample_items = [
+                ('Laptop Dell XPS', 5, 999.99, 'High-performance laptop for professionals'),
+                ('Wireless Mouse', 15, 29.99, 'Ergonomic wireless mouse'),
+                ('USB-C Hub', 8, 49.99, '7-in-1 USB-C hub with HDMI'),
+                ('Mechanical Keyboard', 3, 129.99, 'RGB mechanical keyboard'),
+                ('Monitor Stand', 12, 39.99, 'Adjustable monitor stand')
+            ]
+            cursor.executemany("INSERT INTO stock_items (name, quantity, price, description) VALUES (?, ?, ?, ?)", 
+                             sample_items)
+            connection.commit()
+            print("Stock items table and sample data created successfully")
         
         connection.close()
     except sqlite3.Error as e:
@@ -128,7 +156,167 @@ def dashboard():
         return redirect(url_for('login'))
     
     username = session.get('username', 'User')
-    return render_template('dashboard.html', username=username)
+    
+    # Get stock summary
+    conn = get_db_connection()
+    total_items = 0
+    total_value = 0
+    low_stock_items = 0
+    
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM stock_items")
+            total_items = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT SUM(quantity * price) FROM stock_items")
+            result = cursor.fetchone()[0]
+            total_value = result if result else 0
+            
+            cursor.execute("SELECT COUNT(*) FROM stock_items WHERE quantity < 10")
+            low_stock_items = cursor.fetchone()[0]
+            
+            conn.close()
+        except sqlite3.Error as e:
+            print(f"Dashboard error: {e}")
+    
+    return render_template('dashboard.html', username=username, 
+                         total_items=total_items, total_value=total_value, 
+                         low_stock_items=low_stock_items)
+
+# Stock Management Routes
+@app.route('/items')
+def items_list():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    items = []
+    
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM stock_items ORDER BY created_at DESC")
+            items = cursor.fetchall()
+            conn.close()
+        except sqlite3.Error as e:
+            print(f"Items list error: {e}")
+            flash('Error loading items', 'error')
+    
+    return render_template('items.html', items=items)
+
+@app.route('/items/add', methods=['GET', 'POST'])
+def add_item():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        quantity = request.form.get('quantity')
+        price = request.form.get('price')
+        description = request.form.get('description')
+        
+        if not name or not quantity or not price:
+            flash('Please fill in all required fields', 'error')
+            return render_template('add_item.html')
+        
+        try:
+            quantity = int(quantity)
+            price = float(price)
+        except ValueError:
+            flash('Invalid quantity or price', 'error')
+            return render_template('add_item.html')
+        
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute("INSERT INTO stock_items (name, quantity, price, description) VALUES (?, ?, ?, ?)",
+                             (name, quantity, price, description))
+                conn.commit()
+                conn.close()
+                flash('Item added successfully!', 'success')
+                return redirect(url_for('items_list'))
+            except sqlite3.Error as e:
+                print(f"Add item error: {e}")
+                flash('Error adding item', 'error')
+    
+    return render_template('add_item.html')
+
+@app.route('/items/edit/<int:item_id>', methods=['GET', 'POST'])
+def edit_item(item_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    if not conn:
+        flash('Database connection error', 'error')
+        return redirect(url_for('items_list'))
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        quantity = request.form.get('quantity')
+        price = request.form.get('price')
+        description = request.form.get('description')
+        
+        if not name or not quantity or not price:
+            flash('Please fill in all required fields', 'error')
+            return redirect(url_for('edit_item', item_id=item_id))
+        
+        try:
+            quantity = int(quantity)
+            price = float(price)
+        except ValueError:
+            flash('Invalid quantity or price', 'error')
+            return redirect(url_for('edit_item', item_id=item_id))
+        
+        try:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE stock_items SET name=?, quantity=?, price=?, description=? WHERE id=?",
+                         (name, quantity, price, description, item_id))
+            conn.commit()
+            conn.close()
+            flash('Item updated successfully!', 'success')
+            return redirect(url_for('items_list'))
+        except sqlite3.Error as e:
+            print(f"Edit item error: {e}")
+            flash('Error updating item', 'error')
+    
+    # GET request - show edit form
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM stock_items WHERE id=?", (item_id,))
+        item = cursor.fetchone()
+        conn.close()
+        
+        if not item:
+            flash('Item not found', 'error')
+            return redirect(url_for('items_list'))
+        
+        return render_template('edit_item.html', item=item)
+    except sqlite3.Error as e:
+        print(f"Edit item error: {e}")
+        flash('Error loading item', 'error')
+        return redirect(url_for('items_list'))
+
+@app.route('/items/delete/<int:item_id>')
+def delete_item(item_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM stock_items WHERE id=?", (item_id,))
+            conn.commit()
+            conn.close()
+            flash('Item deleted successfully!', 'success')
+        except sqlite3.Error as e:
+            print(f"Delete item error: {e}")
+            flash('Error deleting item', 'error')
+    
+    return redirect(url_for('items_list'))
 
 @app.before_request
 def check_database():

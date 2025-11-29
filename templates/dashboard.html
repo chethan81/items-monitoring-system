@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Items Monitoring System</title>
+    <title>Dashboard - Stock Monitoring System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="container">
         <header class="dashboard-header">
-            <h1>Items Monitoring System</h1>
+            <h1>Stock Monitoring System</h1>
             <div class="user-info">
                 <span>Welcome, <strong>{{ username }}</strong></span>
                 <a href="{{ url_for('logout') }}" class="btn btn-logout">Logout</a>
@@ -18,30 +18,77 @@
         
         <main class="dashboard-content">
             <div class="welcome-card">
-                <h2>Welcome to Items Monitoring System</h2>
+                <h2>Welcome to Stock Monitoring System</h2>
                 <p>You have successfully logged in as <strong>{{ username }}</strong>.</p>
                 
-                <div class="system-info">
-                    <h3>System Features</h3>
-                    <ul>
-                        <li>✓ User Authentication</li>
-                        <li>✓ Session Management</li>
-                        <li>✓ MySQL Database Integration</li>
-                        <li>✓ Secure Password Hashing</li>
-                        <li>✓ Ready for Cloud Deployment</li>
-                    </ul>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Items</h3>
+                        <p class="stat-number">{{ total_items }}</p>
+                        <span class="stat-label">Products in inventory</span>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h3>Total Value</h3>
+                        <p class="stat-number">${{ "%.2f"|format(total_value) }}</p>
+                        <span class="stat-label">Inventory worth</span>
+                    </div>
+                    
+                    <div class="stat-card {% if low_stock_items > 0 %}warning{% endif %}">
+                        <h3>Low Stock</h3>
+                        <p class="stat-number">{{ low_stock_items }}</p>
+                        <span class="stat-label">Items need restocking</span>
+                    </div>
                 </div>
                 
-                <div class="next-steps">
-                    <h3>Next Steps</h3>
-                    <p>This is a basic authentication system. You can extend it with:</p>
-                    <ul>
-                        <li>Items monitoring features</li>
-                        <li>Real-time notifications</li>
-                        <li>Data visualization</li>
-                        <li>User management</li>
-                    </ul>
+                <div class="action-buttons">
+                    <a href="{{ url_for('items_list') }}" class="btn btn-primary btn-large">
+                        📦 View All Items
+                    </a>
+                    <a href="{{ url_for('add_item') }}" class="btn btn-success btn-large">
+                        ➕ Add New Item
+                    </a>
                 </div>
+                
+                <div class="system-features">
+                    <h3>System Features</h3>
+                    <div class="features-grid">
+                        <div class="feature">
+                            <span class="icon">🔐</span>
+                            <div>
+                                <strong>User Authentication</strong>
+                                <p>Secure login with session management</p>
+                            </div>
+                        </div>
+                        <div class="feature">
+                            <span class="icon">📊</span>
+                            <div>
+                                <strong>Stock Management</strong>
+                                <p>Complete CRUD operations for inventory</p>
+                            </div>
+                        </div>
+                        <div class="feature">
+                            <span class="icon">💾</span>
+                            <div>
+                                <strong>SQLite Database</strong>
+                                <p>Reliable local data storage</p>
+                            </div>
+                        </div>
+                        <div class="feature">
+                            <span class="icon">🚀</span>
+                            <div>
+                                <strong>Cloud Ready</strong>
+                                <p>Deployed on Render platform</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if low_stock_items > 0 %}
+                <div class="alert alert-warning">
+                    <strong>⚠️ Low Stock Alert!</strong> You have {{ low_stock_items }} item(s) that need restocking.
+                </div>
+                {% endif %}
             </div>
         </main>
     </div>
