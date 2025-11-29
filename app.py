@@ -15,6 +15,35 @@ def get_db_connection():
         print(f"Database connection error: {e}")
         return None
 
+def ensure_database_exists():
+    """Create database and tables if they don't exist"""
+    try:
+        connection = sqlite3.connect('items_monitoring.db')
+        cursor = connection.cursor()
+        
+        # Check if users table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+        if not cursor.fetchone():
+            # Create users table
+            cursor.execute("""
+                CREATE TABLE users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    password TEXT NOT NULL
+                )
+            """)
+            
+            # Create admin user
+            hashed_password = generate_password_hash('admin123')
+            cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", 
+                         ('admin', hashed_password))
+            connection.commit()
+            print("Database and admin user created successfully")
+        
+        connection.close()
+    except sqlite3.Error as e:
+        print(f"Database initialization error: {e}")
+
 def init_db():
     conn = get_db_connection()
     if conn:
@@ -100,6 +129,11 @@ def dashboard():
     
     username = session.get('username', 'User')
     return render_template('dashboard.html', username=username)
+
+@app.before_request
+def check_database():
+    if request.endpoint and request.endpoint != 'static':
+        ensure_database_exists()
 
 if __name__ == '__main__':
     init_db()
