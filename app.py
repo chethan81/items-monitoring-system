@@ -318,10 +318,12 @@ def delete_item(item_id):
     
     return redirect(url_for('items_list'))
 
+# Initialize database on first request
 @app.before_request
 def check_database():
-    if request.endpoint and request.endpoint != 'static':
+    if request.endpoint and request.endpoint != 'static' and not hasattr(app, '_db_initialized'):
         ensure_database_exists()
+        app._db_initialized = True
 
 if __name__ == '__main__':
     init_db()
